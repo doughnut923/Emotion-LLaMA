@@ -3,11 +3,10 @@ model:
   model_type: pretrain
   max_txt_len: 500
   end_sym: "</s>"
-  low_resource: True
-  # low_resource: False 
+  low_resource: False
   prompt_template: '[INST] {} [/INST]'
 
-  ckpt: "/home/user/project/Emotion-LLaMA/checkpoints/save_checkpoint/Emoation_LLaMA.pth"
+  ckpt: "checkpoints/save_checkpoint/Emoation_LLaMA.pth"
 
   lora_r: 64
   lora_alpha: 16

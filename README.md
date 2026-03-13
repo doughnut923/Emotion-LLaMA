@@ -330,3 +330,9 @@ If you find our work helpful for your research, please consider giving a star  a
 
 ## 📜 License
 This repository is under the [BSD 3-Clause License](./LICENSE.md). Code is based on MiniGPT-4 with BSD 3-Clause License [here](./LICENSE_MiniGPT4.md). Data is from MER2023 and licensed under [EULA](./LICENSE_EULA.md) for research purposes only.
+
+
+# Notes for setup
+Need to download all things first and configure the paths properly (llama, hubert)
+update cuda and drivers
+use docker

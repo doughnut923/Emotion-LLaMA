@@ -54,7 +54,7 @@ print('Initializing Chat')
 args = parse_args()
 cfg = Config(args)
 
-device = 'cuda'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model_config = cfg.model_cfg
 

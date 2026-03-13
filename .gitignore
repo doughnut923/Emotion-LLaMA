@@ -21,6 +21,8 @@ wheels/
 *.egg
 MANIFEST
 
+checkpoints/
+
 # Virtual environments
 venv/
 env/

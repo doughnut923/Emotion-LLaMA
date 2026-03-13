@@ -1,5 +1,6 @@
 import argparse
 import numpy as np
+import torch
 from nltk.translate.bleu_score import sentence_bleu
 
 from minigpt4.common.registry import registry
@@ -54,7 +55,8 @@ def init_model(args):
 
     model_config = cfg.model_cfg
     model_cls = registry.get_model_class(model_config.arch)
-    model = model_cls.from_config(model_config).to('cuda:0')
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    model = model_cls.from_config(model_config).to(device)
 
 #     import pudb; pudb.set_trace()
     key = list(cfg.datasets_cfg.keys())[0]

@@ -189,7 +189,9 @@ class BaseModel(nn.Module):
             )
 
         if lora_r > 0:
-            llama_model = prepare_model_for_int8_training(llama_model)
+            # Only run int8 preparation when the model was loaded in 8-bit mode.
+            if low_resource:
+                llama_model = prepare_model_for_int8_training(llama_model)
             loraconfig = LoraConfig(
                 r=lora_r,
                 bias="none",

@@ -76,6 +76,13 @@ def main():
     args = parse_args()
     cfg = Config(args)
 
+    if cfg.run_cfg.device == "cuda" and not torch.cuda.is_available():
+        print("CUDA is not available; falling back to CPU mode.")
+        cfg.run_cfg.device = "cpu"
+        cfg.run_cfg.distributed = False
+        cfg.run_cfg.world_size = 1
+        cfg.run_cfg.amp = False
+
     init_distributed_mode(cfg.run_cfg)
     setup_seeds(cfg)
 
