@@ -693,4 +693,9 @@ with gr.Blocks() as demo:
 
     clear.click(gradio_reset, [chat_state, img_list], [chatbot, image, text_input, chat_state, img_list], queue=False)
 
-demo.launch(share=True, enable_queue=True)
+demo.launch(
+    server_name="0.0.0.0",
+    server_port=int(os.environ.get("PORT", "7860")),
+    share=False,
+    enable_queue=True,
+)
