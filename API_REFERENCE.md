@@ -73,10 +73,3 @@ python app_EmotionLlamaClient.py
 ## Quick troubleshooting
 - If you send a file path, the server process must have access to that path.
 - If you get JSON decode errors, try sending the Base64-encoded PNG of the first frame instead of a path.
-
----
-
-If you want, I can:
-- add more endpoints or examples (e.g., multipart/form-data upload),
-- include a minimal client module (requests wrapper), or
-- add a short curl + base64 conversion helper snippet.
