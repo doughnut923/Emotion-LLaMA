@@ -47,16 +47,17 @@ docker run --gpus all \
   -v $(pwd)/transformer:/app/transformer:ro \
   -v $(pwd)/save_checkpoint:/app/save_checkpoint:ro \
   -p 7860:7860 \
+  -p 7889:7889 \
   -e PORT=7860 \
   --rm \
   emotion-llama:latest
 ```
 
 Notes
-- The repository contains two ways to start a Gradio app:
-  - `python app.py` — main demo (uses port `7860` by default).
-  - `python app_EmotionLlamaClient.py` — alternate client demo (launches on `7889`).
-- Dockerfile exposes port `7860` and runs `app.py` by default.
+- The Docker container now runs both Gradio apps simultaneously:
+  - `app.py` — main demo (accessible on port `7860`).
+  - `app_EmotionLlamaClient.py` — alternate client demo (accessible on port `7889`).
+- Both APIs (`/api/predict/`) are available once the container is running.
 - If you prefer not to bake large weights into the image, mount the `checkpoints` and `save_checkpoint` directories as volumes (see `docker run` above).
 - If you encounter CUDA/driver issues, ensure your host driver supports CUDA 11.7 and `nvidia-smi` reports a compatible driver.
 
@@ -116,3 +117,65 @@ Get-FileHash -Algorithm SHA256 .\checkpoints\Llama-2-7b-chat-hf\*.bin
 - Troubleshooting notes for manual copy
   - If the server complains about missing shards, open `pytorch_model.bin.index.json` and check the `weight_map` keys — these list the shard filenames required.
   - If you copied only tokenizer files but not weights, the model will fail to load; ensure both tokenizer and weight shards are present.
+
+Calling the Predict API (Port 7860)
+
+Once the Emotion-LLaMA server is running, you can call the `/api/predict/` endpoint on port 7860 using HTTP requests.
+
+**Endpoint URL**
+```
+http://localhost:7860/api/predict/
+```
+
+**Example: Using curl**
+
+```bash
+# Basic prediction request
+curl -X POST http://localhost:7860/api/predict/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "I am very happy today!",
+    "audio_path": null,
+    "image_path": null
+  }'
+```
+
+**Example: Using Python (requests library)**
+
+```python
+import requests
+import json
+
+url = "http://localhost:7860/api/predict/"
+payload = {
+    "text": "I am very happy today!",
+    "audio_path": None,
+    "image_path": None
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(json.dumps(result, indent=2))
+```
+
+**Example: Using Python (with file inputs)**
+
+```python
+import requests
+
+url = "http://localhost:7860/api/predict/"
+files = {
+    "audio_path": open("path/to/audio.wav", "rb"),
+    "image_path": open("path/to/image.jpg", "rb")
+}
+data = {
+    "text": "What emotion is this?"
+}
+
+response = requests.post(url, data=data, files=files)
+print(response.json())
+```
+
+**Response Format**
+
+The API returns a JSON response with emotion predictions and model outputs. Check the server logs or `app.py` for the exact response structure based on your model configuration.

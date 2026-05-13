@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install -r requirements.txt
 
-EXPOSE 7860 7889
+EXPOSE 7860
 
-COPY start_apps.sh /app/start_apps.sh
-RUN chmod +x /app/start_apps.sh
-
-CMD ["/app/start_apps.sh"]
+CMD ["python", "app.py"]
