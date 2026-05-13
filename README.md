@@ -334,5 +334,7 @@ This repository is under the [BSD 3-Clause License](./LICENSE.md). Code is based
 
 # Notes for setup
 Need to download all things first and configure the paths properly (llama, hubert)
+
 update cuda and drivers
-use docker
+
+Use docker

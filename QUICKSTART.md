@@ -33,6 +33,8 @@ git lfs install
 git clone https://huggingface.co/<model-repo-id> checkpoints/Llama-2-7b-chat-hf
 ```
 
+- If you have no access rights, then you need to copy the `/checkpoint` folder externally
+
 Docker build and run (recommended: mount local model folders)
 
 ```bash
