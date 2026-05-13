@@ -101,3 +101,4 @@ docs/vendor/
 *.sublime-project
 *.sublime-workspace
 
+checkpoints.zip

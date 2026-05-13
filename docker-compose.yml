@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  emotion-llama:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: emotion-llama:latest
+    container_name: emotion-llama-app
+    
+    # Port mappings
+    ports:
+      - "7860:7860"    # main app.py (Gradio)
+      - "7889:7889"    # optional: app_EmotionLlamaClient.py
+    
+    # Volume mounts for model files
+    volumes:
+      # Mount local checkpoints folder (read-only recommended)
+      - ./checkpoints:/app/checkpoints:ro
+      # Mount transformer folder (for feature extractors)
+      - ./transformer:/app/transformer:ro
+      # Mount save_checkpoint for fine-tuned weights (optional, read-only)
+      - ./save_checkpoint:/app/save_checkpoint:ro
+      # Optional: mount examples folder
+      - ./examples:/app/examples:ro
+    
+    # Environment variables
+    environment:
+      - PORT=7860
+      - CUDA_VISIBLE_DEVICES=0  # adjust to your GPU IDs if multiple GPUs
+    
+    # GPU support
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1          # number of GPUs (adjust if needed)
+              capabilities: [gpu]
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits (optional, adjust based on your system)
+    # mem_limit: '32g'
+    # cpus: '4'
