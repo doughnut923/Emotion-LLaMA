@@ -28,7 +28,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py app_EmotionLlamaClient.py infer_api.py ./
 COPY minigpt4/ ./minigpt4/
 COPY eval_configs/ ./eval_configs/
-COPY configs/ ./configs/
 
 # Add entrypoint that checks for mounted checkpoints at runtime
 COPY docker-entrypoint.sh /usr/local/bin/
