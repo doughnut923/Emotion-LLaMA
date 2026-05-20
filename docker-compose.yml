@@ -28,6 +28,9 @@ services:
     environment:
       - PORT=7860
       - CUDA_VISIBLE_DEVICES=0  # adjust to your GPU IDs if multiple GPUs
+      - MODEL_PATH=/app/checkpoints/Llama-2-7b-chat-hf
+      - HUBERT_PATH=/app/checkpoints/transformer/chinese-hubert-large
+      - CKPT_PATH=/app/checkpoints/save_checkpoint/Emoation_LLaMA.pth
     
     # GPU support
     deploy:

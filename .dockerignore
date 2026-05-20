@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+
+# Python cache and build
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual envs
+.venv/
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+
+# Editor/project files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Large model files and checkpoints
+checkpoints/
+save_checkpoint/
+minigptv2_checkpoint.pth
+transformer/
+transformer/**/chinese-hubert-large/
+
+# Dataset and media
+dataset/
+datasets/
+data/
+examples/videos/
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# Archives / packages
+*.pth
+*.pt
+*.bin
+*.tar
+*.tar.gz
+*.zip
+*.ckpt
+
+# OS files
+Thumbs.db
+desktop.ini

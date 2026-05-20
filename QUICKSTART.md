@@ -1,181 +1,111 @@
-# Quickstart — Docker setup
+# Quickstart — Docker deployment (concise)
 
-This guide shows how to run Emotion-LLaMA in Docker, which model files are required, and the CUDA/runtime expectations.
+This quickstart shows the minimal steps to get the full Emotion‑LLaMA demo running in Docker while keeping large model files outside the build context.
 
-**Summary**
-- Base image: `pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime` (CUDA 11.7)
-- Server entrypoint: `app.py` (served with Gradio on port `7860` by default)
-- Alternate demo: `app_EmotionLlamaClient.py` (launches on port `7889`)
+Quick checklist (download/copy these before running):
+- LLaMA weights: `checkpoints/Llama-2-7b-chat-hf/` (model shards + tokenizer + config)
+- HuBERT audio encoder: `checkpoints/transformer/chinese-hubert-large/` (if not already present)
+- Demo checkpoint (optional but recommended): `checkpoints/save_checkpoint/Emoation_LLaMA.pth`
 
-Prerequisites
-- Docker installed with NVIDIA GPU support (NVIDIA Container Toolkit) and a compatible NVIDIA driver for CUDA 11.7.
-- A GPU with sufficient memory. For the bundled 7B model: dockeat least 16 GB GPU RAM recommended; 24 GB+ preferred for comfortable inference.
+Why we keep these outside the image
+- These files are very large (tens of GB). Excluding them from the Docker build context makes image builds fast and prevents accidentally baking weights into the image. The repository's `.dockerignore` already excludes `checkpoints/` and similar folders.
 
-Model files required (place under repo before running Docker or mount at runtime)
-- Checkpoints (LLM): `checkpoints/Llama-2-7b-chat-hf/`
-  - Required files (example set present in this repo): `config.json`, `generation_config.json`, `pytorch_model.bin.index.json`, `tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`, `special_tokens_map.json`, `README.md`, `LICENSE.txt`.
-  - Note: Large weight files (pytorch model shards) are *not* included in the repo. Download them from the model provider (Hugging Face / Meta) and put them into `checkpoints/Llama-2-7b-chat-hf/` preserving filenames.
+1) Prepare model files (required)
 
-- Vision / audio feature extractor: `transformer/chinese-hubert-large/`
-  - Files present in this repo: `chinese-hubert-large-fairseq-ckpt.pt`, `config.json`, `preprocessor_config.json`.
-  - Keep these files in place (already included) or re-download from the original source if missing.
+- LLaMA (required for full functionality):
+  - Minimal items the code expects in `checkpoints/Llama-2-7b-chat-hf/`:
+    - `config.json`, `generation_config.json`, `pytorch_model.bin.index.json`
+    - tokenizer: `tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`, `special_tokens_map.json`
+    - model shard files referenced by `pytorch_model.bin.index.json` (large `.bin` files)
+  - If you have Hugging Face access, clone the model into the folder. If not, copy the files from another host or external drive into `checkpoints/Llama-2-7b-chat-hf/`.
 
-- Fine-tuned checkpoint (optional): `save_checkpoint/Emoation_LLaMA.pth`
-  - If you have a fine-tuned checkpoint, place it under `save_checkpoint/`.
+- HuBERT audio encoder (for audio features):
+  - Path: `checkpoints/transformer/chinese-hubert-large/` — the repo may already contain these files; otherwise download from the model provider and place them there.
 
-How to obtain LLM weights
-- If the model is hosted on Hugging Face and you have access, use the `huggingface-cli` or `git lfs` to download to the `checkpoints` folder. Example:
+- Demo fine-tuned checkpoint (optional):
+  - `checkpoints/save_checkpoint/Emoation_LLaMA.pth` — if present, the demo will load the fine‑tuned weights.
+
+2) Build the image (fast because checkpoints are ignored)
+
+Use BuildKit for faster builds and caching (optional):
 
 ```bash
-# login and clone (replace with correct repo id if different)
+DOCKER_BUILDKIT=1 docker build -t emotion-llama:latest .
+```
+
+3) Run with mounted checkpoints (recommended)
+
+Use the supplied `docker-compose.yml` (pre-configured to mount `./checkpoints`) or run a single container. Example `docker run` (adjust host paths):
+
+```bash
+# single container
+docker run --gpus all \
+  -v /full/path/to/Emotion-LLaMA/checkpoints:/app/checkpoints:ro \
+  -v /full/path/to/Emotion-LLaMA/transformer:/app/transformer:ro \
+  -p 7860:7860 -p 7889:7889 \
+  -e MODEL_PATH=/app/checkpoints/Llama-2-7b-chat-hf \
+  -e HUBERT_PATH=/app/checkpoints/transformer/chinese-hubert-large \
+  -e CKPT_PATH=/app/checkpoints/save_checkpoint/Emoation_LLaMA.pth \
+  emotion-llama:latest
+
+# or use docker-compose (recommended for development):
+docker-compose up --build
+```
+
+Notes:
+- The container entrypoint checks for the LLaMA model directory and will exit with instructions if it is missing. Mounting `./checkpoints` into `/app/checkpoints` is the recommended way to provide weights.
+- `app.py` serves the main Gradio demo on port `7860`. `app_EmotionLlamaClient.py` runs an alternate client on port `7889`.
+
+4) Run locally without Docker (optional)
+
+If you prefer to run natively (for debugging), create the environment and install extras:
+
+```bash
+conda env create -f environment.yaml
+conda activate llama
+pip install moviepy==1.0.3 soundfile==0.12.1 opencv-python==4.7.0.72
+```
+
+Then ensure the same `checkpoints/` layout exists and run:
+
+```bash
+python app.py            # main demo (7860)
+# or
+python app_EmotionLlamaClient.py   # client demo (7889)
+```
+
+5) How to fetch models if you have Hugging Face access
+
+```bash
 huggingface-cli login
 git lfs install
-git clone https://huggingface.co/<model-repo-id> checkpoints/Llama-2-7b-chat-hf
+git clone https://huggingface.co/meta-llama/Llama-2-7b-chat-hf checkpoints/Llama-2-7b-chat-hf
 ```
 
-- If you have no access rights, then you need to copy the `/checkpoint` folder externally
+If you lack HF access, copy the files manually from a host with the weights or an external drive into `checkpoints/Llama-2-7b-chat-hf/` (preserve filenames and folder layout).
 
-Docker build and run (recommended: mount local model folders)
+6) Quick API examples
 
+Curl (file path accessible to server):
 ```bash
-# build image
-docker build -t emotion-llama:latest .
-
-# run with GPU access and mount model folders (adjust paths)
-docker run --gpus all \
-  -v $(pwd)/checkpoints:/app/checkpoints:ro \
-  -v $(pwd)/transformer:/app/transformer:ro \
-  -v $(pwd)/save_checkpoint:/app/save_checkpoint:ro \
-  -p 7860:7860 \
-  -p 7889:7889 \
-  -e PORT=7860 \
-  --rm \
-  emotion-llama:latest
+curl -X POST "http://127.0.0.1:7860/api/predict/" \
+  -H "Content-Type: application/json" \
+  -d '{"data": ["/path/to/video.mp4", "Analyze the emotions in this video."]}'
 ```
 
-Notes
-- The Docker container now runs both Gradio apps simultaneously:
-  - `app.py` — main demo (accessible on port `7860`).
-  - `app_EmotionLlamaClient.py` — alternate client demo (accessible on port `7889`).
-- Both APIs (`/api/predict/`) are available once the container is running.
-- If you prefer not to bake large weights into the image, mount the `checkpoints` and `save_checkpoint` directories as volumes (see `docker run` above).
-- If you encounter CUDA/driver issues, ensure your host driver supports CUDA 11.7 and `nvidia-smi` reports a compatible driver.
+Python (base64 video):
+```python
+import requests, base64
+with open('/path/to/video.mp4','rb') as f:
+    b64 = base64.b64encode(f.read()).decode()
+payload = {"data": [f"data:video/mp4;base64,{b64}", "What emotions are shown?"]}
+resp = requests.post('http://127.0.0.1:7860/api/predict/', json=payload, timeout=300)
+print(resp.json())
+```
 
 Troubleshooting
-- If the server returns errors when loading the model, check file permissions and that the model weight shards exist in `checkpoints/Llama-2-7b-chat-hf/`.
-- If you see out-of-memory errors, lower `--max_new_tokens` or use a larger GPU, or consider using model quantization (outside this quickstart).
+- If the container errors at start: confirm you mounted `checkpoints/` into `/app/checkpoints` and that `MODEL_PATH` points to a valid LLaMA folder. The entrypoint will print helpful instructions.
+- If model loading fails with missing shards, open `checkpoints/Llama-2-7b-chat-hf/pytorch_model.bin.index.json` and ensure the shard filenames listed there exist in the same folder.
+- For CUDA/driver issues: ensure your host NVIDIA driver supports CUDA 11.7 and that the NVIDIA Container Toolkit is installed.
 
-Want me to add
-- a `docker-compose.yml` example that mounts models and exposes ports, or
-- a small `download_models.sh` helper that uses `huggingface-cli` to fetch known files.
-
-Manual copy from local drives (when Hugging Face access is restricted)
-- Sometimes you must copy model files manually (for example, from a corporate drive, external disk, or another machine) because you don't have HF permissions. Follow these steps:
-
-- 1) Identify required files
-  - Minimal required files for `checkpoints/Llama-2-7b-chat-hf/`:
-    - `config.json`, `generation_config.json`, `pytorch_model.bin.index.json`, tokenizer files (`tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`), `special_tokens_map.json`, and the model shard files referenced by `pytorch_model.bin.index.json` (these are usually large `.bin` or `.safetensors` files).
-
-- 2) Copy files to repository location
-  - Windows (PowerShell):
-
-```powershell
-# copy from external drive (adjust paths)
-Copy-Item -Path "E:\models\Llama-2-7b-chat-hf\*" -Destination "C:\path\to\Emotion-LLaMA\checkpoints\Llama-2-7b-chat-hf\" -Recurse
-```
-
-  - Linux / macOS:
-
-```bash
-# copy from mounted drive
-cp -r /mnt/external/models/Llama-2-7b-chat-hf/* /home/user/Emotion-LLaMA/checkpoints/Llama-2-7b-chat-hf/
-```
-
-- 3) Preserve filenames and directory layout
-  - Make sure the `pytorch_model.bin.index.json` references match the shard filenames you copied. Do not rename shards.
-
-- 4) Verify integrity (optional but recommended)
-  - If you have SHA256 checksums, verify them. Example (Linux):
-
-```bash
-sha256sum checkpoints/Llama-2-7b-chat-hf/*.bin
-```
-
-  - On Windows (PowerShell):
-
-```powershell
-Get-FileHash -Algorithm SHA256 .\checkpoints\Llama-2-7b-chat-hf\*.bin
-```
-
-- 5) Adjust permissions if needed
-  - Linux: `chmod -R a+r checkpoints/Llama-2-7b-chat-hf/`
-  - Windows: ensure your user account has read access to the files.
-
-- 6) Start the server (same as above)
-  - Build/run the Docker image and mount the local `checkpoints` directory, or run locally with `python app.py`.
-
-- Troubleshooting notes for manual copy
-  - If the server complains about missing shards, open `pytorch_model.bin.index.json` and check the `weight_map` keys — these list the shard filenames required.
-  - If you copied only tokenizer files but not weights, the model will fail to load; ensure both tokenizer and weight shards are present.
-
-Calling the Predict API (Port 7860)
-
-Once the Emotion-LLaMA server is running, you can call the `/api/predict/` endpoint on port 7860 using HTTP requests.
-
-**Endpoint URL**
-```
-http://localhost:7860/api/predict/
-```
-
-**Example: Using curl**
-
-```bash
-# Basic prediction request
-curl -X POST http://localhost:7860/api/predict/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "I am very happy today!",
-    "audio_path": null,
-    "image_path": null
-  }'
-```
-
-**Example: Using Python (requests library)**
-
-```python
-import requests
-import json
-
-url = "http://localhost:7860/api/predict/"
-payload = {
-    "text": "I am very happy today!",
-    "audio_path": None,
-    "image_path": None
-}
-
-response = requests.post(url, json=payload)
-result = response.json()
-print(json.dumps(result, indent=2))
-```
-
-**Example: Using Python (with file inputs)**
-
-```python
-import requests
-
-url = "http://localhost:7860/api/predict/"
-files = {
-    "audio_path": open("path/to/audio.wav", "rb"),
-    "image_path": open("path/to/image.jpg", "rb")
-}
-data = {
-    "text": "What emotion is this?"
-}
-
-response = requests.post(url, data=data, files=files)
-print(response.json())
-```
-
-**Response Format**
-
-The API returns a JSON response with emotion predictions and model outputs. Check the server logs or `app.py` for the exact response structure based on your model configuration.
+Need help wiring your specific host paths into `docker run` or `docker-compose.yml`? Tell me the host path where your model files live and I will produce the exact `docker run` and `docker-compose` snippets.
