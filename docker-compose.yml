@@ -17,16 +17,11 @@ services:
       - "7860:7860"    # main app.py (Gradio)
       - "7889:7889"    # optional: app_EmotionLlamaClient.py
     
-    # Volume mounts for model files
+    # Volume mounts
     volumes:
-      # Mount local checkpoints folder (read-only recommended)
-      - ./checkpoints:/app/checkpoints:ro
-      # Mount transformer folder (for feature extractors)
-      - ./transformer:/app/transformer:ro
-      # Mount save_checkpoint for fine-tuned weights (optional, read-only)
-      - ./save_checkpoint:/app/save_checkpoint:ro
-      # Optional: mount examples folder
-      - ./examples:/app/examples:ro
+      # Persist fine-tuned weights and logs on the host (writable)
+      - ./save_checkpoint:/app/save_checkpoint
+      - ./logs:/app/logs
     
     # Environment variables
     environment:
