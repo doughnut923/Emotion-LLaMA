@@ -22,7 +22,7 @@ if [ ! -d "$MODEL_PATH" ]; then
     mkdir -p /app/checkpoints
     if [ -w /app/checkpoints ]; then
       echo "Downloading into /app/checkpoints (this may take a while)..."
-      python - <<PY || true
+      python - <<'PY' || true
 from huggingface_hub import snapshot_download
 import os, sys
 repo = os.environ.get('HF_MODEL_REPO', 'doughnut23/emollama-models')
