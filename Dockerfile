@@ -30,9 +30,7 @@ COPY minigpt4/ ./minigpt4/
 COPY eval_configs/ ./eval_configs/
 
 # Add entrypoint that checks for mounted checkpoints at runtime
-COPY docker-entrypoint.sh /usr/local/bin/
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint-sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-sh || true
+# Note: entrypoint script removed; container will start directly with CMD
 
 # Enable hf-transfer for faster HF Hub downloads
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
@@ -59,5 +57,5 @@ PY
 
 EXPOSE 7860
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Start the application directly (no entrypoint script)
 CMD ["python", "app.py"]
