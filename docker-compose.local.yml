@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  emotion-llama:
+    volumes:
+      # Mount host model files into the same paths expected by the app
+      - ./checkpoints:/app/checkpoints:ro
+      - ./transformer:/app/checkpoints/transformer:ro
+      - ./save_checkpoint:/app/checkpoints/save_checkpoint:ro

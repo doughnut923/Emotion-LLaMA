@@ -33,9 +33,26 @@ Use BuildKit for faster builds and caching (optional):
 DOCKER_BUILDKIT=1 docker build -t emotion-llama:latest .
 ```
 
-3) Run with mounted checkpoints (recommended)
+3) Choose how the container gets checkpoints
 
-Use the supplied `docker-compose.yml` (pre-configured to mount `./checkpoints`) or run a single container. Example `docker run` (adjust host paths):
+Default option: use the model files baked into the image by the HF download step. This is the simplest path and does not require mounts.
+
+```bash
+docker-compose up --build
+```
+
+Local-mount option: if you want to use checkpoint files from your host machine instead, use the override file `docker-compose.local.yml`.
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build
+```
+
+For the local-mount option, the expected host layout is:
+- `./checkpoints/Llama-2-7b-chat-hf/`
+- `./transformer/chinese-hubert-large/`
+- `./save_checkpoint/Emoation_LLaMA.pth`
+
+Example `docker run` (adjust host paths):
 
 ```bash
 # single container
@@ -48,12 +65,13 @@ docker run --gpus all \
   -e CKPT_PATH=/app/checkpoints/save_checkpoint/Emoation_LLaMA.pth \
   emotion-llama:latest
 
-# or use docker-compose (recommended for development):
-docker-compose up --build
+# or use docker-compose with the local-mount override:
+docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
 Notes:
-- The container entrypoint checks for the LLaMA model directory and will exit with instructions if it is missing. Mounting `./checkpoints` into `/app/checkpoints` is the recommended way to provide weights.
+- The default compose file now assumes the image already contains the downloaded models.
+- Use `docker-compose.local.yml` only when you want the host folders to override the image files.
 - `app.py` serves the main Gradio demo on port `7860`. `app_EmotionLlamaClient.py` runs an alternate client on port `7889`.
 
 4) Run locally without Docker (optional)
